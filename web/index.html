@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>CS 1.6 — Xash3D WASM</title>
+  <style>
+    html,body{margin:0;background:#000;height:100%;overflow:hidden}
+    #canvas{display:block;width:100vw;height:100vh}
+    #status{position:fixed;top:8px;left:8px;color:#0f0;font:14px monospace}
+  </style>
+</head>
+<body>
+  <div id="status">carregando…</div>
+  <canvas id="canvas" tabindex="-1"></canvas>
+  <script>
+    var Module = {
+      canvas: document.getElementById('canvas'),
+      arguments: ['-game', 'cstrike'],
+      print: function (t) { console.log(t); },
+      printErr: function (t) { console.error(t); },
+      setStatus: function (t) {
+        document.getElementById('status').textContent = t || '';
+      },
+    };
+  </script>
+  <script async src="xash.js"></script>
+</body>
+</html>
