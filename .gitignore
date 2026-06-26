@@ -1,0 +1,16 @@
+# Assets proprietários do jogo (você fornece a própria cópia)
+assets/valve/
+assets/cstrike/
+
+# Saída de build
+dist/
+
+# Fontes clonadas / build dos vendors
+vendor/
+
+# Artefatos do Claude / specs (não versionar)
+docs/superpowers/
+.claude/
+
+# Sistema
+.DS_Store
