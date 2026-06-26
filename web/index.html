@@ -77,7 +77,7 @@
             'filesystem_stdio.wasm',
             'libref_gles3compat.wasm',
             'cl_dlls/menu_emscripten_wasm32.wasm',
-            'dlls/cs_emscripten_wasm32.so',
+            'dlls/cs_emscripten_wasm32.wasm',
             'cl_dlls/client_emscripten_wasm32.wasm',
             '/rwdir/filesystem_stdio.so',
           ],
@@ -107,7 +107,7 @@
               case 'filesystem_stdio.wasm': return 'engine/filesystem_stdio.wasm';
               case 'libref_gles3compat.wasm': return 'engine/libref_gles3compat.wasm';
               case 'cl_dlls/menu_emscripten_wasm32.wasm': return 'cs16-client/cl_dll/menu_emscripten_wasm32.wasm';
-              case 'dlls/cs_emscripten_wasm32.so': return 'cs16-client/dlls/cs_emscripten_wasm32.so';
+              case 'dlls/cs_emscripten_wasm32.wasm': return 'cs16-client/dlls/cs_emscripten_wasm32.wasm';
               case 'cl_dlls/client_emscripten_wasm32.wasm': return 'cs16-client/cl_dll/client_emscripten_wasm32.wasm';
               default: return p;
             }

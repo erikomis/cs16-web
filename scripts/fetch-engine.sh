@@ -24,6 +24,8 @@ echo "Baixando game (cs16-client)…"
 dl "$CS/cl_dll/menu_emscripten_wasm32.wasm"   "$DIST/cs16-client/cl_dll/menu_emscripten_wasm32.wasm"
 dl "$CS/cl_dll/client_emscripten_wasm32.wasm" "$DIST/cs16-client/cl_dll/client_emscripten_wasm32.wasm"
 dl "$CS/dlls/cs_emscripten_wasm32.so"         "$DIST/cs16-client/dlls/cs_emscripten_wasm32.so"
+# o engine @latest procura o server lib como .wasm; o pacote entrega .so (mesmo módulo wasm)
+cp "$DIST/cs16-client/dlls/cs_emscripten_wasm32.so" "$DIST/cs16-client/dlls/cs_emscripten_wasm32.wasm"
 
 echo "Baixando JSZip (loader de assets no browser)…"
 dl "$JSZIP" "$DIST/vendor/jszip.min.js"
