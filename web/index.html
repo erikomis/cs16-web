@@ -1,28 +1,124 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <title>CS 1.6 — Xash3D WASM</title>
+  <meta charset="UTF-8" />
+  <title>Counter-Strike 1.6 — Browser (Xash3D-FWGS WASM)</title>
   <style>
-    html,body{margin:0;background:#000;height:100%;overflow:hidden}
-    #canvas{display:block;width:100vw;height:100vh}
-    #status{position:fixed;top:8px;left:8px;color:#0f0;font:14px monospace}
+    body { margin: 0; background: #000; overflow: hidden; font-family: Arial, sans-serif; }
+    canvas { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; opacity: 0; transition: opacity 1s ease-in; }
+    #overlay { position: fixed; inset: 0; background: radial-gradient(circle, #1a1a1a, #000); display: flex;
+               flex-direction: column; align-items: center; justify-content: center; color: #fff; z-index: 10; }
+    #title { font-size: 2.2rem; font-weight: bold; color: #ffcc00; text-shadow: 2px 2px 8px #000; margin-bottom: 25px; }
+    #bar-wrap { width: 60%; height: 24px; background: rgba(255,255,255,.1); border: 2px solid #ffcc00;
+                border-radius: 5px; overflow: hidden; box-shadow: 0 0 10px #ffcc00; }
+    #bar { width: 0; height: 100%; background: linear-gradient(90deg, #ffaa00, #ffcc00); transition: width .2s ease; }
+    #status { margin-top: 15px; font-size: 1rem; text-align: center; }
+    #play { display: none; margin-top: 30px; padding: 10px 22px; background: #ffcc00; color: #000; border: none;
+            font-size: 1rem; cursor: pointer; border-radius: 5px; }
+    #play:hover { background: #ffaa00; }
   </style>
+  <!-- JSZip (vendorizado, UMD global) e o loader do engine (vendorizado) -->
+  <script src="vendor/jszip.min.js"></script>
+  <script src="engine/raw.js"></script>
 </head>
 <body>
-  <div id="status">carregando…</div>
-  <canvas id="canvas" tabindex="-1"></canvas>
+  <div id="overlay">
+    <div id="title">COUNTER-STRIKE 1.6</div>
+    <div id="bar-wrap"><div id="bar"></div></div>
+    <div id="status">Preparando…</div>
+    <button id="play">Jogar (tela cheia)</button>
+  </div>
+  <canvas id="canvas"></canvas>
+
   <script>
-    var Module = {
-      canvas: document.getElementById('canvas'),
-      arguments: ['-game', 'cstrike'],
-      print: function (t) { console.log(t); },
-      printErr: function (t) { console.error(t); },
-      setStatus: function (t) {
-        document.getElementById('status').textContent = t || '';
-      },
-    };
+    const statusEl = document.getElementById('status');
+    const barEl = document.getElementById('bar');
+    const setStatus = (m) => { statusEl.innerText = m; };
+    const setProgress = (p) => { barEl.style.width = p + '%'; };
+
+    async function main() {
+      const overlay = document.getElementById('overlay');
+      const canvas = document.getElementById('canvas');
+      const play = document.getElementById('play');
+
+      try {
+        setStatus('Baixando assets (valve.zip)…');
+        const res = await fetch('./valve.zip');
+        if (!res.ok) throw new Error('valve.zip não encontrado (' + res.status + ')');
+        const buffer = await res.arrayBuffer();
+
+        setStatus('Lendo arquivos do jogo…');
+        const zip = await JSZip.loadAsync(buffer);
+        const entries = Object.keys(zip.files).filter((p) => !zip.files[p].dir);
+        const total = entries.length;
+
+        // IMPORTANTE: pré-extrair TUDO antes de iniciar o engine. O emscripten não
+        // aguarda um onRuntimeInitialized assíncrono — se escrevêssemos os arquivos com
+        // await lá dentro, o main() do engine procuraria a pasta 'cstrike' antes dos
+        // writeFile terminarem ("couldn't find game directory cstrike"). Então extraímos
+        // aqui (async, ok) e escrevemos de forma SÍNCRONA no onRuntimeInitialized.
+        const files = {};
+        let extracted = 0;
+        await Promise.all(entries.map(async (p) => {
+          files['/rodir/' + p] = await zip.files[p].async('uint8array');
+          extracted++;
+          if (extracted % 20 === 0 || extracted === total) {
+            setProgress(Math.floor((extracted / total) * 100));
+            setStatus(`Lendo arquivos… (${extracted}/${total})`);
+          }
+        }));
+
+        setStatus('Iniciando o engine…');
+        Xash3D({
+          arguments: ['-windowed', '-game', 'cstrike', '+_vgui_menus', '0'],
+          canvas,
+          ctx: canvas.getContext('webgl2', { alpha: false, depth: true, stencil: true, antialias: true }),
+          dynamicLibraries: [
+            'filesystem_stdio.wasm',
+            'libref_gles3compat.wasm',
+            'cl_dlls/menu_emscripten_wasm32.wasm',
+            'dlls/cs_emscripten_wasm32.so',
+            'cl_dlls/client_emscripten_wasm32.wasm',
+            '/rwdir/filesystem_stdio.so',
+          ],
+          onRuntimeInitialized: function () {
+            // SÍNCRONO: grava todos os arquivos no FS antes de devolver o controle ao
+            // engine, garantindo que /rodir/cstrike exista quando o main() procurar.
+            Object.keys(files).forEach((full) => {
+              const dir = full.slice(0, full.lastIndexOf('/'));
+              this.FS.mkdirTree(dir);
+              this.FS.writeFile(full, files[full]);
+            });
+            this.FS.chdir('/rodir');
+            setProgress(100);
+            setStatus('Pronto! Clique para jogar.');
+            play.style.display = 'inline-block';
+            play.addEventListener('click', () => {
+              overlay.style.opacity = 0;
+              setTimeout(() => overlay.remove(), 500);
+              canvas.style.opacity = 1;
+              if (canvas.requestFullscreen) canvas.requestFullscreen();
+            });
+          },
+          locateFile: (p) => {
+            switch (p) {
+              case 'xash.wasm': return 'engine/xash.wasm';
+              case '/rwdir/filesystem_stdio.so':
+              case 'filesystem_stdio.wasm': return 'engine/filesystem_stdio.wasm';
+              case 'libref_gles3compat.wasm': return 'engine/libref_gles3compat.wasm';
+              case 'cl_dlls/menu_emscripten_wasm32.wasm': return 'cs16-client/cl_dll/menu_emscripten_wasm32.wasm';
+              case 'dlls/cs_emscripten_wasm32.so': return 'cs16-client/dlls/cs_emscripten_wasm32.so';
+              case 'cl_dlls/client_emscripten_wasm32.wasm': return 'cs16-client/cl_dll/client_emscripten_wasm32.wasm';
+              default: return p;
+            }
+          },
+        });
+      } catch (e) {
+        setStatus('Falha ao carregar. Veja o console.');
+        console.error('Falha ao carregar o jogo:', e);
+      }
+    }
+    main();
   </script>
-  <script async src="xash.js"></script>
 </body>
 </html>
