@@ -65,6 +65,9 @@
         Xash3D({
           arguments: ['-windowed', '-game', 'cstrike', '+_vgui_menus', '0', '-ref', 'webgl2'],
           canvas,
+          // Cria e entrega o contexto WebGL2 ao emscripten (sem isso o engine consultava
+          // um GLctx undefined -> "Cannot read properties of undefined (getParameter)").
+          ctx: canvas.getContext('webgl2', { alpha: false, depth: true, stencil: true, antialias: true }),
           dynamicLibraries: [
             'filesystem_stdio.wasm',
             'libref_webgl2.wasm',
