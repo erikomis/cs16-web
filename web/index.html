@@ -100,7 +100,9 @@
             setTimeout(() => { overlay.style.display = 'none'; }, 1500);
             // Só carrega o mapa e prepara o servidor p/ bots. VOCÊ escolhe o time e adiciona
             // os bots pelo console (bot_add / bot_quota 6). Sem auto-join nem auto-bots.
-            setTimeout(() => run('map de_dust2'), 4000);
+            // maxplayers ANTES do mapa: senão o listen server abre com poucas vagas
+            // -> não cabe bot -> "team full". 12 vagas = você + 11 bots.
+            setTimeout(() => { run('maxplayers 12'); run('map de_dust2'); }, 4000);
             setTimeout(() => {
               run('exec listenserver.cfg');
               run('mp_limitteams 0'); run('mp_autoteambalance 0');
