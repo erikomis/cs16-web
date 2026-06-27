@@ -64,20 +64,25 @@
           }
         }));
 
-        // Integração estilo webxash3d-fwgs (engine 1.0.1, renderer gles3compat). O @latest
-        // (1.2.x / webgl2) tem regressão no GL — ver scripts/fetch-engine.sh.
+        // extras.pk3 (asset obrigatório do cs16-client 0.1.x).
+        setStatus('Baixando extras.pk3…');
+        const extras = await (await fetch('cs16-client/cstrike/extras.pk3')).arrayBuffer();
+
+        // Integração estilo webxash3d-fwgs (engine 1.1.0, renderer webgl2, cs16-client 0.1.0
+        // com bot yapb). Ver scripts/fetch-engine.sh para a justificativa das versões.
         setStatus('Iniciando o engine…');
         Xash3D({
-          arguments: ['-windowed', '-width', String(W), '-height', String(H), '-game', 'cstrike', '+_vgui_menus', '0'],
+          arguments: ['-windowed', '-width', String(W), '-height', String(H), '-game', 'cstrike', '+_vgui_menus', '0', '-ref', 'webgl2'],
           canvas,
           ctx: canvas.getContext('webgl2', { alpha: false, depth: true, stencil: true, antialias: true }),
           dynamicLibraries: [
             'filesystem_stdio.wasm',
-            'libref_gles3compat.wasm',
+            'libref_webgl2.wasm',
             'cl_dlls/menu_emscripten_wasm32.wasm',
-            'dlls/cs_emscripten_wasm32.so',
+            'dlls/cs_emscripten_wasm32.wasm',
+            'dlls/yapb_emscripten_wasm32.wasm',
             'cl_dlls/client_emscripten_wasm32.wasm',
-            '/rwdir/filesystem_stdio.so',
+            '/rodir/filesystem_stdio.wasm',
           ],
           onRuntimeInitialized: function () {
             Object.keys(files).forEach((full) => {
@@ -85,6 +90,8 @@
               this.FS.mkdirTree(dir);
               this.FS.writeFile(full, files[full]);
             });
+            this.FS.mkdirTree('/rodir/cstrike');
+            this.FS.writeFile('/rodir/cstrike/extras.pk3', new Uint8Array(extras));
             try { this.FS.mkdir('/rwdir'); } catch (e) {}
             this.FS.chdir('/rodir');
             setProgress(100);
@@ -94,14 +101,14 @@
           locateFile: (p) => {
             switch (p) {
               case 'xash.wasm': return 'engine/xash.wasm';
-              case '/rwdir/filesystem_stdio.so':
+              case '/rodir/filesystem_stdio.wasm':
               case 'filesystem_stdio.wasm': return 'engine/filesystem_stdio.wasm';
-              case 'libref_gles3compat.wasm': return 'engine/libref_gles3compat.wasm';
-              case 'libref_soft.wasm': return 'engine/libref_soft.wasm';
               case 'libref_webgl2.wasm': return 'engine/libref_webgl2.wasm';
-              case 'cl_dlls/menu_emscripten_wasm32.wasm': return 'cs16-client/cl_dll/menu_emscripten_wasm32.wasm';
-              case 'dlls/cs_emscripten_wasm32.so': return 'cs16-client/dlls/cs_emscripten_wasm32.so';
-              case 'cl_dlls/client_emscripten_wasm32.wasm': return 'cs16-client/cl_dll/client_emscripten_wasm32.wasm';
+              case 'libref_soft.wasm': return 'engine/libref_soft.wasm';
+              case 'cl_dlls/menu_emscripten_wasm32.wasm': return 'cs16-client/cstrike/cl_dlls/menu_emscripten_wasm32.wasm';
+              case 'dlls/cs_emscripten_wasm32.wasm': return 'cs16-client/cstrike/dlls/cs_emscripten_wasm32.wasm';
+              case 'dlls/yapb_emscripten_wasm32.wasm': return 'cs16-client/cstrike/dlls/yapb_emscripten_wasm32.wasm';
+              case 'cl_dlls/client_emscripten_wasm32.wasm': return 'cs16-client/cstrike/cl_dlls/client_emscripten_wasm32.wasm';
               default: return p;
             }
           },

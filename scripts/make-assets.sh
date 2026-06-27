@@ -39,9 +39,12 @@ elif [ "$MODE" = "play" ]; then
   rsync -a --exclude 'maps' --exclude 'overviews' --exclude 'dlls' --exclude 'cl_dlls' \
     "$ROOT/assets/cstrike/" "$STAGE/cstrike/"
   mkdir -p "$STAGE/cstrike/maps"
-  for m in ${MAPS:-de_dust2 de_dust de_aztec cs_assault de_inferno}; do
-    cp "$ROOT/assets/cstrike/maps/${m}."* "$STAGE/cstrike/maps/" 2>/dev/null || true
-  done
+  if [ -n "${MAPS:-}" ]; then
+    for m in $MAPS; do cp "$ROOT/assets/cstrike/maps/${m}."* "$STAGE/cstrike/maps/" 2>/dev/null || true; done
+  else
+    # todos os mapas (padrão)
+    cp -R "$ROOT/assets/cstrike/maps/." "$STAGE/cstrike/maps/" 2>/dev/null || true
+  fi
 else
   echo "MODE=menu — empacotando conjunto enxuto…"
   # valve mínimo
