@@ -36,6 +36,13 @@
       const overlay = document.getElementById('overlay');
       const canvas = document.getElementById('canvas');
 
+      // Define a RESOLUÇÃO do framebuffer (atributos width/height). Sem isso o canvas
+      // fica em 300x150 (default) e o engine reclama "invalid mode" -> 640x480 / tela preta.
+      const W = Math.min(window.innerWidth, 1280) || 1280;
+      const H = Math.min(window.innerHeight, 720) || 720;
+      canvas.width = W;
+      canvas.height = H;
+
       try {
         // Assets do jogo: pré-extraídos em memória ANTES de iniciar o engine, e gravados
         // de forma SÍNCRONA no onRuntimeInitialized (o emscripten não aguarda um
@@ -61,7 +68,7 @@
         // (1.2.x / webgl2) tem regressão no GL — ver scripts/fetch-engine.sh.
         setStatus('Iniciando o engine…');
         Xash3D({
-          arguments: ['-windowed', '-game', 'cstrike', '+_vgui_menus', '0'],
+          arguments: ['-windowed', '-width', String(W), '-height', String(H), '-game', 'cstrike', '+_vgui_menus', '0'],
           canvas,
           ctx: canvas.getContext('webgl2', { alpha: false, depth: true, stencil: true, antialias: true }),
           dynamicLibraries: [
@@ -91,6 +98,7 @@
               case 'filesystem_stdio.wasm': return 'engine/filesystem_stdio.wasm';
               case 'libref_gles3compat.wasm': return 'engine/libref_gles3compat.wasm';
               case 'libref_soft.wasm': return 'engine/libref_soft.wasm';
+              case 'libref_webgl2.wasm': return 'engine/libref_webgl2.wasm';
               case 'cl_dlls/menu_emscripten_wasm32.wasm': return 'cs16-client/cl_dll/menu_emscripten_wasm32.wasm';
               case 'dlls/cs_emscripten_wasm32.so': return 'cs16-client/dlls/cs_emscripten_wasm32.so';
               case 'cl_dlls/client_emscripten_wasm32.wasm': return 'cs16-client/cl_dll/client_emscripten_wasm32.wasm';
