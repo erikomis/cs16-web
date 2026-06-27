@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Gera dist/valve.zip a partir dos seus assets (assets/valve + assets/cstrike).
+# Gera dist/game.zip a partir dos seus assets (assets/valve + assets/cstrike).
 # O index.html carrega esse zip no browser e extrai para /rodir no FS do engine.
 #
 # Modos (variável MODE):
@@ -74,6 +74,6 @@ else
   cp "$ROOT/assets/cstrike/liblist.gam" "$STAGE/cstrike/" 2>/dev/null || true
 fi
 
-rm -f "$ROOT/dist/valve.zip"
-( cd "$STAGE" && zip -0 -r -q "$ROOT/dist/valve.zip" valve cstrike )
-echo "OK: dist/valve.zip ($(du -h "$ROOT/dist/valve.zip" | cut -f1), modo=$MODE)"
+rm -f "$ROOT/dist/game.zip"
+( cd "$STAGE" && zip -0 -r -q "$ROOT/dist/game.zip" valve cstrike )
+echo "OK: dist/game.zip ($(du -h "$ROOT/dist/game.zip" | cut -f1), modo=$MODE)"
