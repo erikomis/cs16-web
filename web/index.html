@@ -14,7 +14,7 @@
     #bar { width: 0; height: 100%; background: linear-gradient(90deg, #ffaa00, #ffcc00); transition: width .2s ease; }
     #status { margin-top: 15px; font-size: 1rem; text-align: center; }
   </style>
-  <!-- JSZip (vendorizado, UMD global) e o loader do engine (vendorizado) -->
+  <!-- JSZip (vendorizado, UMD global) e o loader do engine (vendorizado, xash3d-fwgs 1.0.1) -->
   <script src="vendor/jszip.min.js"></script>
   <script src="engine/raw.js"></script>
 </head>
@@ -37,7 +37,9 @@
       const canvas = document.getElementById('canvas');
 
       try {
-        // 1) Assets do jogo (valve.zip) -> pré-extraídos em memória ANTES de iniciar o engine.
+        // Assets do jogo: pré-extraídos em memória ANTES de iniciar o engine, e gravados
+        // de forma SÍNCRONA no onRuntimeInitialized (o emscripten não aguarda um
+        // onRuntimeInitialized async -> 'couldn't find game directory cstrike').
         setStatus('Baixando assets (valve.zip)…');
         const res = await fetch('./valve.zip');
         if (!res.ok) throw new Error('valve.zip não encontrado (' + res.status + ')');
@@ -50,41 +52,32 @@
         await Promise.all(entries.map(async (p) => {
           files['/rodir/' + p] = await zip.files[p].async('uint8array');
           if (++n % 20 === 0 || n === total) {
-            setProgress(Math.floor((n / total) * 90));
+            setProgress(Math.floor((n / total) * 100));
             setStatus(`Lendo arquivos… (${n}/${total})`);
           }
         }));
 
-        // 2) extras.pk3 (asset obrigatório do cs16-client).
-        setStatus('Baixando extras.pk3…');
-        const extras = await (await fetch('cs16-client/cstrike/extras.pk3')).arrayBuffer();
-
-        // 3) Inicia o engine. dynamicLibraries + locateFile espelham o exemplo oficial
-        // raw-html-cs16 do webxash3d-fwgs, mas apontando para os arquivos LOCAIS (dist/).
+        // Integração estilo webxash3d-fwgs (engine 1.0.1, renderer gles3compat). O @latest
+        // (1.2.x / webgl2) tem regressão no GL — ver scripts/fetch-engine.sh.
         setStatus('Iniciando o engine…');
         Xash3D({
-          arguments: ['-windowed', '-game', 'cstrike', '+_vgui_menus', '0', '-ref', 'webgl2'],
+          arguments: ['-windowed', '-game', 'cstrike', '+_vgui_menus', '0'],
           canvas,
-          // Cria e entrega o contexto WebGL2 ao emscripten (sem isso o engine consultava
-          // um GLctx undefined -> "Cannot read properties of undefined (getParameter)").
           ctx: canvas.getContext('webgl2', { alpha: false, depth: true, stencil: true, antialias: true }),
           dynamicLibraries: [
             'filesystem_stdio.wasm',
-            'libref_webgl2.wasm',
+            'libref_gles3compat.wasm',
             'cl_dlls/menu_emscripten_wasm32.wasm',
-            'dlls/cs_emscripten_wasm32.wasm',
+            'dlls/cs_emscripten_wasm32.so',
             'cl_dlls/client_emscripten_wasm32.wasm',
-            '/rodir/filesystem_stdio.wasm',
+            '/rwdir/filesystem_stdio.so',
           ],
           onRuntimeInitialized: function () {
-            // SÍNCRONO: grava tudo no FS antes de devolver o controle ao engine.
             Object.keys(files).forEach((full) => {
               const dir = full.slice(0, full.lastIndexOf('/'));
               this.FS.mkdirTree(dir);
               this.FS.writeFile(full, files[full]);
             });
-            this.FS.mkdirTree('/rodir/cstrike');
-            this.FS.writeFile('/rodir/cstrike/extras.pk3', new Uint8Array(extras));
             try { this.FS.mkdir('/rwdir'); } catch (e) {}
             this.FS.chdir('/rodir');
             setProgress(100);
@@ -94,12 +87,13 @@
           locateFile: (p) => {
             switch (p) {
               case 'xash.wasm': return 'engine/xash.wasm';
-              case '/rodir/filesystem_stdio.wasm':
+              case '/rwdir/filesystem_stdio.so':
               case 'filesystem_stdio.wasm': return 'engine/filesystem_stdio.wasm';
-              case 'libref_webgl2.wasm': return 'engine/libref_webgl2.wasm';
-              case 'cl_dlls/menu_emscripten_wasm32.wasm': return 'cs16-client/cstrike/cl_dlls/menu_emscripten_wasm32.wasm';
-              case 'dlls/cs_emscripten_wasm32.wasm': return 'cs16-client/cstrike/dlls/cs_emscripten_wasm32.wasm';
-              case 'cl_dlls/client_emscripten_wasm32.wasm': return 'cs16-client/cstrike/cl_dlls/client_emscripten_wasm32.wasm';
+              case 'libref_gles3compat.wasm': return 'engine/libref_gles3compat.wasm';
+              case 'libref_soft.wasm': return 'engine/libref_soft.wasm';
+              case 'cl_dlls/menu_emscripten_wasm32.wasm': return 'cs16-client/cl_dll/menu_emscripten_wasm32.wasm';
+              case 'dlls/cs_emscripten_wasm32.so': return 'cs16-client/dlls/cs_emscripten_wasm32.so';
+              case 'cl_dlls/client_emscripten_wasm32.wasm': return 'cs16-client/cl_dll/client_emscripten_wasm32.wasm';
               default: return p;
             }
           },
