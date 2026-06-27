@@ -28,6 +28,18 @@ if [ "$MODE" = "full" ]; then
   cp -R "$ROOT/assets/cstrike/." "$STAGE/cstrike/"
   # remove os DLLs x86 originais (o cs16-client wasm os substitui)
   rm -rf "$STAGE/cstrike/dlls" "$STAGE/cstrike/cl_dlls"
+elif [ "$MODE" = "bots" ]; then
+  # Conjunto ENXUTO (~50-60MB) p/ o engine 1.1.0 webgl2, que tem limite de memória menor.
+  # Comprovadamente roda partida com bots. Sem sons/gfx/resource/halflife.wad p/ caber.
+  echo "MODE=bots — enxuto p/ 1.1.0 (modelos + sprites + mapa), partida com bots…"
+  for f in liblist.gam valve.rc gfx.wad fonts.wad cached.wad; do
+    [ -e "$ROOT/assets/valve/$f" ] && cp "$ROOT/assets/valve/$f" "$STAGE/valve/"
+  done
+  [ -d "$ROOT/assets/cstrike/models" ]  && cp -R "$ROOT/assets/cstrike/models"  "$STAGE/cstrike/models"
+  [ -d "$ROOT/assets/cstrike/sprites" ] && cp -R "$ROOT/assets/cstrike/sprites" "$STAGE/cstrike/sprites"
+  find "$ROOT/assets/cstrike" -maxdepth 1 -type f ! -name '*.wad' -exec cp {} "$STAGE/cstrike/" \;
+  mkdir -p "$STAGE/cstrike/maps"
+  for m in ${MAPS:-de_dust2}; do cp "$ROOT/assets/cstrike/maps/${m}."* "$STAGE/cstrike/maps/" 2>/dev/null || true; done
 elif [ "$MODE" = "play" ]; then
   echo "MODE=play — jogável (modelos/sons/sprites + alguns mapas), ~230MB…"
   # valve essencial p/ CS (sem sons/gfx do Half-Life)
