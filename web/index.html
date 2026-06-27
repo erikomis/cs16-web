@@ -68,7 +68,7 @@
         // (1.2.x / webgl2) tem regressão no GL — ver scripts/fetch-engine.sh.
         setStatus('Iniciando o engine…');
         Xash3D({
-          arguments: ['-windowed', '-width', String(W), '-height', String(H), '-game', 'cstrike', '+_vgui_menus', '0'],
+          arguments: ['-windowed', '-width', String(W), '-height', String(H), '-game', 'cstrike', '+_vgui_menus', '0', '-console', '+developer', '1'],
           canvas,
           ctx: canvas.getContext('webgl2', { alpha: false, depth: true, stencil: true, antialias: true }),
           dynamicLibraries: [
@@ -96,21 +96,16 @@
               try { mod.ccall('Cmd_ExecuteString', null, ['string'], [cmd]); }
               catch (e) { console.error('cmd falhou:', cmd, e); }
             };
-            setStatus('Carregando de_dust2 com bots…');
+            setStatus('Carregando de_dust2…');
             setTimeout(() => { overlay.style.display = 'none'; }, 1500);
+            // Só carrega o mapa e prepara o servidor p/ bots. VOCÊ escolhe o time e adiciona
+            // os bots pelo console (bot_add / bot_quota 6). Sem auto-join nem auto-bots.
             setTimeout(() => run('map de_dust2'), 4000);
-            // Servidor SEM bots ainda (só config). bot_quota fica pro fim, depois que VOCÊ
-            // entrar — assim o servidor está vazio na hora de escolher o time (sem team full).
             setTimeout(() => {
               run('exec listenserver.cfg');
               run('mp_limitteams 0'); run('mp_autoteambalance 0');
-              run('bot_join_after_player 0'); run('bot_join_team any'); run('bot_quota_mode fill');
+              run('bot_join_team any'); run('bot_quota_mode normal');
             }, 12000);
-            // Você entra num time (auto-select) e escolhe o modelo -> spawna.
-            setTimeout(() => { run('menuselect 5'); run('menuselect 2'); }, 15000);
-            setTimeout(() => { run('menuselect 1'); }, 16500);
-            // SÓ AGORA enche de bots (você já está num time -> não dá team full).
-            setTimeout(() => { run('bot_quota 6'); }, 20000);
           },
           locateFile: (p) => {
             switch (p) {
