@@ -98,18 +98,17 @@
             };
             setStatus('Carregando de_dust2 com bots…');
             setTimeout(() => { overlay.style.display = 'none'; }, 1500);
+            // O mapa executa cstrike/listenserver.cfg sozinho (sem limite de time + bots).
+            // Reforçamos por JS também, caso o exec automático não rode.
             setTimeout(() => run('map de_dust2'), 4000);
-            // Config do servidor (depois do mapa subir): sem limite/balanço de time, e
-            // modo "fill" — mantém 9 jogadores no total; quando VOCÊ entra, um bot sai
-            // (sempre tem vaga pra você).
             setTimeout(() => {
-              run('mp_limitteams 0'); run('mp_autoteambalance 0'); run('mp_roundtime 9');
-              run('bot_join_after_player 0'); run('bot_join_team any');
-              run('bot_quota_mode fill'); run('bot_quota 9');
-            }, 11000);
-            // Você entra num time (auto) e escolhe modelo -> spawna. O fill abre vaga.
-            setTimeout(() => { run('menuselect 5'); }, 14000);
-            setTimeout(() => { run('menuselect 1'); }, 15000);
+              run('exec listenserver.cfg');
+              run('mp_limitteams 0'); run('mp_autoteambalance 0');
+              run('bot_quota_mode fill'); run('bot_quota 6');
+            }, 12000);
+            // Você entra num time (auto-select) e escolhe o modelo -> spawna.
+            setTimeout(() => { run('menuselect 5'); }, 15000);
+            setTimeout(() => { run('menuselect 1'); }, 16000);
           },
           locateFile: (p) => {
             switch (p) {
