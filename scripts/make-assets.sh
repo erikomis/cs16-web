@@ -28,6 +28,20 @@ if [ "$MODE" = "full" ]; then
   cp -R "$ROOT/assets/cstrike/." "$STAGE/cstrike/"
   # remove os DLLs x86 originais (o cs16-client wasm os substitui)
   rm -rf "$STAGE/cstrike/dlls" "$STAGE/cstrike/cl_dlls"
+elif [ "$MODE" = "play" ]; then
+  echo "MODE=play — jogável (modelos/sons/sprites + alguns mapas), ~230MB…"
+  # valve essencial p/ CS (sem sons/gfx do Half-Life)
+  for f in liblist.gam valve.rc gfx.wad fonts.wad cached.wad decals.wad halflife.wad; do
+    [ -e "$ROOT/assets/valve/$f" ] && cp "$ROOT/assets/valve/$f" "$STAGE/valve/"
+  done
+  [ -d "$ROOT/assets/valve/resource" ] && cp -R "$ROOT/assets/valve/resource" "$STAGE/valve/resource"
+  # cstrike sem maps/overviews/DLLs x86; mapas selecionados são adicionados depois
+  rsync -a --exclude 'maps' --exclude 'overviews' --exclude 'dlls' --exclude 'cl_dlls' \
+    "$ROOT/assets/cstrike/" "$STAGE/cstrike/"
+  mkdir -p "$STAGE/cstrike/maps"
+  for m in ${MAPS:-de_dust2 de_dust de_aztec cs_assault de_inferno}; do
+    cp "$ROOT/assets/cstrike/maps/${m}."* "$STAGE/cstrike/maps/" 2>/dev/null || true
+  done
 else
   echo "MODE=menu — empacotando conjunto enxuto…"
   # valve mínimo
