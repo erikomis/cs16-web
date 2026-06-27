@@ -88,8 +88,28 @@
             try { this.FS.mkdir('/rwdir'); } catch (e) {}
             this.FS.chdir('/rodir');
             setProgress(100);
-            setStatus('Carregando o jogo…');
-            setTimeout(() => { overlay.style.display = 'none'; }, 1200);
+
+            // Auto-inicia de_dust2 e ENCHE DE BOTS via Cmd_ExecuteString, depois que o engine
+            // sobe. O Zbot está embutido no cs16-client (bot_add/bot_quota + BotProfile.db).
+            const mod = this;
+            const run = (cmd) => {
+              try { mod.ccall('Cmd_ExecuteString', null, ['string'], [cmd]); }
+              catch (e) { console.error('cmd falhou:', cmd, e); }
+            };
+            setStatus('Carregando de_dust2 com bots…');
+            setTimeout(() => { overlay.style.display = 'none'; }, 1500);
+            setTimeout(() => {
+              run('mp_limitteams 0'); run('mp_autoteambalance 0'); run('mp_roundtime 5');
+              run('map de_dust2');
+            }, 4000);
+            // 1) jogador entra num time e escolhe modelo (spawna, rodada começa)
+            setTimeout(() => { run('menuselect 5'); }, 12000);  // time: auto-select
+            setTimeout(() => { run('menuselect 1'); }, 13000);  // modelo/classe
+            // 2) com a rodada rolando, enche de bots
+            setTimeout(() => {
+              run('bot_join_team any'); run('bot_quota_mode fill'); run('bot_quota 9');
+              run('bot_add'); run('bot_add'); run('bot_add'); run('bot_add');
+            }, 16000);
           },
           locateFile: (p) => {
             switch (p) {
