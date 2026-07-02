@@ -1,0 +1,9 @@
+# não mandar dados pesados/gerados pro contexto de build (só web/ e scripts/ importam)
+assets/
+dist/
+vendor/
+.git/
+docs/
+node_modules/
+*.zip
+.playwright-mcp/

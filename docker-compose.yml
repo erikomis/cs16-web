@@ -1,0 +1,17 @@
+services:
+  cs16-web:
+    build: .
+    image: cs16-web
+    container_name: cs16-web
+    ports:
+      - "8080:8080"
+    environment:
+      # play = jogável (mapas + modelos + sons + bots). Outras opções: menu | full
+      MODE: play
+      # REPACK: 1  # descomente p/ regerar dist/game.zip após trocar os assets
+    volumes:
+      # SEUS assets do CS 1.6 (obrigatório): coloque em ./assets/valve e ./assets/cstrike
+      - ./assets:/app/assets
+      # cache do engine baixado + saída empacotada (evita re-baixar/re-empacotar)
+      - ./dist:/app/dist
+    restart: unless-stopped

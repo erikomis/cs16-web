@@ -10,6 +10,7 @@ import http.server, os, sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "dist")
 PORT = int(os.environ.get("PORT", "8080"))
+HOST = os.environ.get("HOST", "127.0.0.1")  # use 0.0.0.0 no Docker
 COEP = os.environ.get("COEP", "0") == "1"
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -25,5 +26,5 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     if not os.path.isdir(ROOT):
         sys.exit("dist/ não existe — rode ./scripts/fetch-engine.sh e ./scripts/make-assets.sh primeiro")
-    print(f"Servindo {os.path.abspath(ROOT)} em http://localhost:{PORT}  (COEP={'on' if COEP else 'off'})")
-    http.server.HTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
+    print(f"Servindo {os.path.abspath(ROOT)} em http://localhost:{PORT}  (bind {HOST}, COEP={'on' if COEP else 'off'})")
+    http.server.HTTPServer((HOST, PORT), Handler).serve_forever()
